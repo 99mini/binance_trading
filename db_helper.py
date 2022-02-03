@@ -65,6 +65,7 @@ def delete_db_history(id):
     except Exception as e:
         print("delete_db_history: ", e)
 
+
 # 거래내역 DB 전부 제거
 def delete_db_all():
     cs = con.cursor()
@@ -75,4 +76,4 @@ def delete_db_all():
         delete_db_history(id)
     cs.close()
 
-delete_db_all()
+# delete_db_all()

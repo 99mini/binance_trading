@@ -237,6 +237,40 @@ def exit_position(exchange, symbol, position):
         telegramMassageBot(e)
 
 
+# 청산 주문
+def exec_exit_order(exchange, symbol, position, pnl_rate_list, pnl_price_list, pnl, order_price):
+    try:
+        # 콘솔용 포지션 변수
+        tmp_position = position.copy()
+
+        liquidation_price, position = exit_position(exchange, symbol, position)
+
+        # 콘솔용 계산식
+
+        pnl_rate_list.append(pnl)
+        pnl_price_list.append(pnl * tmp_position["amount"])
+
+        now = datetime.datetime.now()
+        print(now)
+        print("주문가: ", order_price,
+              "청산가: ", liquidation_price,
+              "포지션: ", tmp_position["type"],
+              "거래 수수료: ", calc_fee(order_price, liquidation_price) * tmp_position["amount"], '\n',
+              "당 거래 수익률: ", pnl,
+              "당 거래 수익금: ", pnl * tmp_position["amount"],
+              "수익률 합계: ", sum(pnl_rate_list),
+              "수익금 합계: ", sum(pnl_price_list)
+              )
+
+        # 텔레그램 알림
+        msg = '수익률: {0}'.format(pnl)
+        telegramMassageBot(msg)
+
+        return position, pnl_rate_list, pnl_price_list
+    except Exception as e:
+        print("exec_exit_order : ", e)
+
+
 # 비트코인 20일선 이격률 계산
 def calc_btc_sma20_sep_rate():
     try:
