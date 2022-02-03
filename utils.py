@@ -30,18 +30,15 @@ def calc_target(exchange, symbol):
         now_data = df.iloc[-1]
 
         # noise 계산
-        # 노이즈 = 1 - 절댓값(시가-종가)  / (고가-저가)
-        noise = 1 - abs(previous_data['open'] - previous_data['close']) / (previous_data['high'] - previous_data['low'])
-        long_noise = 0.4
-        short_noise = 0.7
+        noise_ratio = calc_noise_ratio(period=13, df=df)
 
-        # 반올림 고려
+        # 반올림 고려 최소 가격 변화
         # 참조 : https://www.binance.com/en/trade-rule
+        min_price_movement = 4  # SANDUSDT 의 최소 가격 변화 = 0.0001
         # 직전 봉과 지금 봉으로 타겟 계산
-        min_price_movement = 4
-        long_target = round(now_data['open'] + (previous_data['high'] - previous_data['low']) * noise,
+        long_target = round(now_data['open'] + (previous_data['high'] - previous_data['low']) * noise_ratio,
                             min_price_movement)
-        short_target = round(now_data['open'] - (previous_data['high'] - previous_data['low']) * noise,
+        short_target = round(now_data['open'] - (previous_data['high'] - previous_data['low']) * noise_ratio,
                              min_price_movement)
         return long_target, short_target
     except Exception as e:
@@ -325,10 +322,22 @@ def calc_pnl(position, order_price, liquidation_price):
 
         fee = calc_fee(order_price, liquidation_price)
 
-        return pnl - fee
+        return round(pnl - fee, 4)
     except Exception as e:
         print("calc_pnl", e)
         telegramMassageBot(e)
+
+
+# noise ratio 계산
+def calc_noise_ratio(period, df):
+    # 노이즈 = 1 - 절댓값(시가-종가)  / (고가-저가)
+    # noise = 1 - abs(previous_data['open'] - previous_data['close']) / (previous_data['high'] - previous_data['low'])
+    sum_noise = 0
+    for i in range(2, period + 2):
+        tmp_data = df.iloc[-i]
+        sum_noise += 1 - abs(tmp_data['open'] - tmp_data['close']) / (tmp_data['high'] - tmp_data['low'])
+    noise_ratio = round(sum_noise / period, 4)
+    return noise_ratio
 
 
 # fee 계산

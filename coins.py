@@ -63,6 +63,6 @@ df_mana_day['datetime'] = pd.to_datetime(df_mana_day['datetime'], unit='ms')
 df_mana = pd.DataFrame(mana, columns=['datetime', 'open', 'high', 'low', 'close', 'volume'])
 df_mana['datetime'] = pd.to_datetime(df_mana['datetime'], unit='ms')
 # df_mana.set_index('datetime', inplace=True)
-df_mana['long'] =""
-df_mana['short'] =""
+df_mana['long'] = ""
+df_mana['short'] = ""
 

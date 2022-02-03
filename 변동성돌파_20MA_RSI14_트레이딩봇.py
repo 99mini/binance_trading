@@ -47,7 +47,11 @@ liquidation_price = 0
 pnl_rate_list = []
 pnl_price_list = []
 
-utils.telegramMassageBot("PROGRAM START")
+# 익절률 | 손절률
+take_profit_rate = 1.5
+loss_cut_rate = - 1.4
+
+utils.telegramMassageBot("{0} PROGRAM START".format(str(now)))
 
 while True:
     try:
@@ -126,10 +130,10 @@ while True:
                 reversal = btc_sma20_sep_rate > 0
 
             # 현재시간과 포지션 진입시간의 차이가 1시간 이상이면 포지션 종료
-            # 수익률 1.5% 발생시 청산
-            # 손실률 1.6% 발생시 청산
+            # 수익률 take_profit_rate 발생시 청산
+            # 손실률 loss_cut_rate 발생시 청산
             # btc sma 양전 / 음전 시 청산
-            if time_diff.seconds >= 3600 * 4 or pnl > 1.5 or pnl < -1.4 or reversal:
+            if time_diff.seconds >= 3600 * 4 or pnl > take_profit_rate or pnl < loss_cut_rate or reversal:
                 position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
                     exchange=binance,
                     symbol=symbol,
@@ -210,27 +214,27 @@ while True:
 
         # 콘솔 프린트
         if 0 <= now.second % 10 <= 1:
-            print(now.hour, now.minute, now.second)
+            print(now)
             # 포지션이 없는 경우
             if position['type'] is None:
-                print("현재가 : ", cur_price,
-                      "롱 목표가 : ", long_target,
-                      "숏 목표가 : ", short_target, '\n',
-                      "BTC 20일선 이격률 : ", btc_sma20_sep_rate,
-                      "RSI14 : ", utils.rsi_binance(utils.timeframe, symbol),
-                      "op_mode : ", op_mode
+                print("현재가 :", cur_price,
+                      "롱 목표가 :", long_target,
+                      "숏 목표가 :", short_target, '\n'
+                      "BTC 20일선 이격률 :", btc_sma20_sep_rate,
+                      "RSI14 :", utils.rsi_binance(utils.timeframe, symbol),
+                      "op_mode :", op_mode
                       )
             # 포지션이 있는 경우
             else:
                 print(
-                    "진입시간 : ", position['time'],
-                    "포지션 : ", position['type'],
-                    "주문가 : ", order_price,
-                    "주문수량 : ", position['amount'],
-                    "현재가 : ", cur_price, '\n'
-                    "수익률 : ", utils.calc_pnl(position, order_price, cur_price),
-                    "BTC 20일선 이격률 : ", btc_sma20_sep_rate,
-                    "op_mode : ", op_mode
+                    "진입시간 :", position['time'],
+                    "포지션 :", position['type'],
+                    "주문가 :", order_price,
+                    "주문수량 :", position['amount'],
+                    "현재가 :", cur_price, '\n'
+                    "수익률 :", utils.calc_pnl(position, order_price, cur_price),
+                    "BTC 20일선 이격률 :", btc_sma20_sep_rate,
+                    "op_mode :", op_mode
                 )
 
     except Exception as e:
