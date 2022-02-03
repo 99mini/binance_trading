@@ -1,0 +1,13 @@
+## Ignore File ##
+
+# config file
+config.py
+
+# 실행파일
+*.spec
+
+# 실행파일 디렉토리
+build
+
+# test 파일
+test.py
