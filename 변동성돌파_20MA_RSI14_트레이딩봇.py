@@ -60,12 +60,6 @@ while True:
         # 구매 가능 자산
         amount = utils.cal_amount(usdt, cur_price, leverage)
 
-        # btc sma20 separate rate
-        btc_sam20_sep_rate = utils.calc_btc_sma20_sep_rate()
-
-        # rsi14
-        rsi14 = utils.rsi_binance(utils.timeframe, symbol)
-
         # 일봉 기준
         # 포지션 종료
         # if now.hour == 9 and now.minute == 0 and (20 <= now.second < 30):
@@ -121,7 +115,6 @@ while True:
 
             time_diff = now - position['time']
             pnl = utils.calc_pnl(position, order_price, cur_price)
-
 
             # 현재시간과 포지션 진입시간의 차이가 1시간 이상이면 포지션 종료
             # 수익률이 1% 발생시 바로 청산
@@ -228,8 +221,8 @@ while True:
                 print("현재가 : ", cur_price,
                       "롱 목표가 : ", long_target,
                       "숏 목표가 : ", short_target,
-                      "BTC 20일선 이격률 : ", btc_sam20_sep_rate,
-                      "RSI14 : ", rsi14,
+                      "BTC 20일선 이격률 : ", utils.calc_btc_sma20_sep_rate(),
+                      "RSI14 : ", utils.rsi_binance(utils.timeframe, symbol),
                       "op_mode : ", op_mode
                       )
             # 포지션이 있는 경우
@@ -239,9 +232,7 @@ while True:
                     "주문가 : ", order_price,
                     "주문수량 : ", position['amount'],
                     "현재가 : ", cur_price,
-                    "수익률 : ", utils.calc_pnl(position, order_price, cur_price), '\n',
-                    "BTC 20일선 이격률 : ", btc_sam20_sep_rate,
-                    "RSI14 : ", rsi14,
+                    "수익률 : ", utils.calc_pnl(position, order_price, cur_price),
                     "op_mode : ", op_mode
                 )
 
