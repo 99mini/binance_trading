@@ -1,4 +1,5 @@
 import datetime
+import math
 import time
 
 import utils
@@ -44,8 +45,8 @@ position = {
 # False -> 주문 불가능
 op_mode = False
 
-# True -> 분할매도
-split_sell = False
+# 분할 매도 비율
+split_sell_rate = 0.8
 
 # 콘솔 테스트용
 liquidation_price = 0
@@ -72,7 +73,6 @@ while True:
         # btc 20일선 이격률
         btc_sma20_sep_rate = utils.calc_btc_sma20_sep_rate()
 
-
         # 포지션 종료
         if op_mode and position['type'] is not None:
 
@@ -92,37 +92,22 @@ while True:
             # 1시간봉 기준
             # 포지션을 잡은 후 1시간 이내
             if time_diff <= 3600:
-                # 수익률이 take_profit_rate 이상이면
-                # 절반 매도 후 목표 수익률을 높여서 홀딩
-                if not split_sell:
-                    if pnl > take_profit_rate:
-                        liquidation_amount = round(position['amount'] / 2, 1)
-                        position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
-                            exchange=binance,
-                            symbol=symbol,
-                            position=position,
-                            pnl_rate_list=pnl_rate_list,
-                            pnl_price_list=pnl_price_list,
-                            pnl=pnl,
-                            amount=liquidation_amount
-                        )
-                        split_sell = True
-                # 분할 매도를 수행 한 후
-                # 수익률 * 배수 에 도달하면 포지션 청산
-                else:
-                    if pnl > take_profit_rate * 1.4:
-                        liquidation_amount = position['amount']
-                        position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
-                            exchange=binance,
-                            symbol=symbol,
-                            position=position,
-                            pnl_rate_list=pnl_rate_list,
-                            pnl_price_list=pnl_price_list,
-                            pnl=pnl,
-                            amount=liquidation_amount
-                        )
-                        op_mode = False
-                        split_sell = False
+                # 1시간 이내에 익절 구간있으면 익절
+                # 수익률이 목표수익률 * 분할매도비율 이상이면
+                # 수량의 25% 청산
+                # 분할매대비율 10% 증가
+                if pnl > take_profit_rate * split_sell_rate:
+                    liquidation_amount = math.trunc(position['amount'] / 5)
+                    position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
+                        exchange=binance,
+                        symbol=symbol,
+                        position=position,
+                        pnl_rate_list=pnl_rate_list,
+                        pnl_price_list=pnl_price_list,
+                        pnl=pnl,
+                        amount=liquidation_amount
+                    )
+                    split_sell_rate *= 1.1
 
             # 포지션 잡은 후 1시간 ~ 4시간 사이
             elif 3600 + 10 < time_diff < 3600 * 4:
@@ -139,7 +124,6 @@ while True:
                         amount=liquidation_amount
                     )
                     op_mode = False
-                    split_sell = False
             # 포지션 잡은 후 4시간 이상이면 모든 포지션 종료
             elif time_diff.seconds >= 3600 * 4:
                 liquidation_amount = position['amount']
@@ -153,7 +137,6 @@ while True:
                     amount=liquidation_amount
                 )
                 op_mode = False
-                split_sell = False
 
                 # 잔고 갱신
                 balance = binance.fetch_balance()
@@ -174,9 +157,9 @@ while True:
                     amount=liquidation_amount
                 )
                 op_mode = False
-                split_sell = False
-        # 목표가 갱신
-        if now.minute == 0 and (10 <= now.second < 20):
+
+        # 포지션이 없는 경우 목표가 갱신
+        if position['type'] is None and now.minute == 0 and (10 <= now.second < 20):
             print("=" * 100)
             print("목표가 갱신")
             long_target, short_target = utils.calc_target(binance, symbol)
@@ -194,6 +177,7 @@ while True:
                                                          amount,
                                                          position
                                                          )
+            split_sell_rate = 1
 
         # 콘솔 프린트
         if 0 <= now.second % 10 <= 1:
@@ -203,7 +187,7 @@ while True:
                 print("현재가 :", cur_price,
                       "롱 목표가 :", long_target,
                       "숏 목표가 :", short_target, '\n'
-                      "BTC 20일선 이격률 :", btc_sma20_sep_rate,
+                                               "BTC 20일선 이격률 :", btc_sma20_sep_rate,
                       "RSI14 :", utils.rsi_binance(utils.timeframe, symbol),
                       "op_mode :", op_mode
                       )
@@ -215,7 +199,7 @@ while True:
                     "주문가 :", position["order_price"],
                     "주문수량 :", position['amount'],
                     "현재가 :", cur_price, '\n'
-                    "수익률 :", utils.calc_pnl(position, cur_price),
+                                        "수익률 :", utils.calc_pnl(position, cur_price),
                     "BTC 20일선 이격률 :", btc_sma20_sep_rate,
                     "op_mode :", op_mode
                 )
