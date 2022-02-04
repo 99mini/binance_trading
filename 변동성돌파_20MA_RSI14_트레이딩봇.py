@@ -5,7 +5,7 @@ import time
 import utils
 from main import *
 
-symbol = "SAND/USDT"
+symbol = "XRP/USDT"
 
 long_target, short_target = utils.calc_target(binance, symbol)
 
@@ -91,7 +91,7 @@ while True:
 
             # 1시간봉 기준
             # 포지션을 잡은 후 1시간 이내
-            if time_diff <= 3600:
+            if time_diff.seconds <= 3600:
                 # 1시간 이내에 익절 구간있으면 익절
                 # 수익률이 목표수익률 * 분할매도비율 이상이면
                 # 수량의 25% 청산
@@ -110,7 +110,7 @@ while True:
                     split_sell_rate *= 1.1
 
             # 포지션 잡은 후 1시간 ~ 4시간 사이
-            elif 3600 + 10 < time_diff < 3600 * 4:
+            elif 3600 + 10 < time_diff.seconds < 3600 * 4:
                 # 수익률 도달시 모든 포지션 종료
                 if pnl > take_profit_rate:
                     liquidation_amount = position['amount']
