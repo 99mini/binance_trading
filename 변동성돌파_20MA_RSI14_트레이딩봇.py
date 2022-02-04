@@ -36,20 +36,25 @@ print("=" * 100)
 position = {
     "type": None,
     "amount": 0,
-    "time": None
+    "time": None,
+    "order_price": 0
 }
 
+# True -> 주문 가능
+# False -> 주문 불가능
 op_mode = False
 
+# True -> 분할매도
+split_sell = False
+
 # 콘솔 테스트용
-order_price = 0
 liquidation_price = 0
 pnl_rate_list = []
 pnl_price_list = []
 
 # 익절률 | 손절률
-take_profit_rate = 1.5
-loss_cut_rate = - 1.4
+take_profit_rate = 1.3
+loss_cut_rate = - 1.2
 
 utils.telegramMassageBot("{0} PROGRAM START".format(str(now)))
 
@@ -67,73 +72,77 @@ while True:
         # btc 20일선 이격률
         btc_sma20_sep_rate = utils.calc_btc_sma20_sep_rate()
 
-        # 일봉 기준
-        # 포지션 종료
-        # if now.hour == 9 and now.minute == 0 and (20 <= now.second < 30):
 
-        '''
-        # 15분봉 기준
-        # 포지션 종료
-        if now.minute % 15 == 1 and (0 <= now.second < 10):
-            if op_mode and position['type'] is not None and (position['time'].minute / 15 != now.minute / 15):
-                # 콘솔용 포지션 변수
-                tmp_position = position.copy()
-
-                liquidation_price, position = utils.exit_position(binance, symbol, position)
-                op_mode = False
-
-                # 잔고 갱신
-                balance = binance.fetch_balance()
-                usdt = balance['total']['USDT']
-
-                # 콘솔용 계산식
-                pnl = utils.calc_pnl(tmp_position, order_price, liquidation_price)
-                pnl_rate_list.append(pnl)
-                pnl_price_list.append(pnl * tmp_position["amount"])
-
-                print(now)
-                print("주문가: ", order_price,
-                      "청산가: ", liquidation_price,
-                      "포지션: ", tmp_position["type"],
-                      "거래 수수료: ", 0.0004 * tmp_position["amount"] * 2, '\n',
-                      "당 거래 수익률: ", pnl,
-                      "당 거래 수익금: ", pnl * tmp_position["amount"],
-                      "수익률 합계: ", sum(pnl_rate_list),
-                      "수익금 합계: ", sum(pnl_price_list)
-                      )
-
-                # 텔레그램 알림
-                msg = '수익률: {0}'.format(utils.calc_pnl(tmp_position, order_price, cur_price))
-                utils.telegramMassageBot(msg)
-
-        # 목표가 갱신
-        if now.minute % 15 == 0 and (10 <= now.second < 20):
-            print("=" * 100)
-            print("목표가 갱신")
-            long_target, short_target = utils.calc_target(binance, symbol)
-            op_mode = True
-
-            time.sleep(10)
-        '''
-
-        # 1시간봉 기준
         # 포지션 종료
         if op_mode and position['type'] is not None:
 
+            # 주문시간과 현재시간의 차이
             time_diff = now - position['time']
-            pnl = utils.calc_pnl(position, order_price, cur_price)
 
+            # 수익률
+            pnl = utils.calc_pnl(position, cur_price)
+
+            # 롱 포지션에서 btc sma20 음전 | 숏 포지션에서 btc sma20 양전
             reversal = False
             if position['type'] == 'long':
                 reversal = btc_sma20_sep_rate < 0
             elif position['type'] == 'short':
                 reversal = btc_sma20_sep_rate > 0
 
-            # 현재시간과 포지션 진입시간의 차이가 1시간 이상이면 포지션 종료
-            # 수익률 take_profit_rate 발생시 청산
-            # 손실률 loss_cut_rate 발생시 청산
-            # btc sma 양전 / 음전 시 청산
-            if time_diff.seconds >= 3600 * 4 or pnl > take_profit_rate or pnl < loss_cut_rate or reversal:
+            # 1시간봉 기준
+            # 포지션을 잡은 후 1시간 이내
+            if time_diff <= 3600:
+                # 수익률이 take_profit_rate 이상이면
+                # 절반 매도 후 목표 수익률을 높여서 홀딩
+                if not split_sell:
+                    if pnl > take_profit_rate:
+                        liquidation_amount = round(position['amount'] / 2, 1)
+                        position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
+                            exchange=binance,
+                            symbol=symbol,
+                            position=position,
+                            pnl_rate_list=pnl_rate_list,
+                            pnl_price_list=pnl_price_list,
+                            pnl=pnl,
+                            amount=liquidation_amount
+                        )
+                        split_sell = True
+                # 분할 매도를 수행 한 후
+                # 수익률 * 배수 에 도달하면 포지션 청산
+                else:
+                    if pnl > take_profit_rate * 1.4:
+                        liquidation_amount = position['amount']
+                        position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
+                            exchange=binance,
+                            symbol=symbol,
+                            position=position,
+                            pnl_rate_list=pnl_rate_list,
+                            pnl_price_list=pnl_price_list,
+                            pnl=pnl,
+                            amount=liquidation_amount
+                        )
+                        op_mode = False
+                        split_sell = False
+
+            # 포지션 잡은 후 1시간 ~ 4시간 사이
+            elif 3600 + 10 < time_diff < 3600 * 4:
+                # 수익률 도달시 모든 포지션 종료
+                if pnl > take_profit_rate:
+                    liquidation_amount = position['amount']
+                    position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
+                        exchange=binance,
+                        symbol=symbol,
+                        position=position,
+                        pnl_rate_list=pnl_rate_list,
+                        pnl_price_list=pnl_price_list,
+                        pnl=pnl,
+                        amount=liquidation_amount
+                    )
+                    op_mode = False
+                    split_sell = False
+            # 포지션 잡은 후 4시간 이상이면 모든 포지션 종료
+            elif time_diff.seconds >= 3600 * 4:
+                liquidation_amount = position['amount']
                 position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
                     exchange=binance,
                     symbol=symbol,
@@ -141,14 +150,31 @@ while True:
                     pnl_rate_list=pnl_rate_list,
                     pnl_price_list=pnl_price_list,
                     pnl=pnl,
-                    order_price=order_price
+                    amount=liquidation_amount
                 )
                 op_mode = False
+                split_sell = False
 
                 # 잔고 갱신
                 balance = binance.fetch_balance()
                 usdt = balance['total']['USDT']
 
+            # 손절 시나리오
+            # 손실률 loss_cut_rate 발생시 청산
+            # btc sma 양전 / 음전 시 청산
+            if pnl < loss_cut_rate or reversal:
+                liquidation_amount = position['amount']
+                position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
+                    exchange=binance,
+                    symbol=symbol,
+                    position=position,
+                    pnl_rate_list=pnl_rate_list,
+                    pnl_price_list=pnl_price_list,
+                    pnl=pnl,
+                    amount=liquidation_amount
+                )
+                op_mode = False
+                split_sell = False
         # 목표가 갱신
         if now.minute == 0 and (10 <= now.second < 20):
             print("=" * 100)
@@ -157,49 +183,6 @@ while True:
             op_mode = True
 
             time.sleep(10)
-
-        '''
-        # # 4시간 봉 기준
-        # # 포지션 종료
-        # if now.hour % 4 == 0 and now.minute == 55 and (0 <= now.second < 10):
-        #     if op_mode and position['type'] is not None and ((position['time'].hour - 1) / 4 != (now.hour - 1) / 4):
-        #         liquidation_price, position = utils.exit_position(binance, symbol, position)
-        #         op_mode = False
-        #
-        #         # 콘솔용 포지션 변수
-        #         tmp_position = position.copy()
-        #
-        #         # 콘솔용 계산식
-        #         pnl = utils.calc_pnl(tmp_position, order_price, liquidation_price)
-        #         pnl_rate_list.append(pnl)
-        #         pnl_price_list.append(pnl * tmp_position["amount"])
-        #
-        #         print(now)
-        #         print("주문가: ", order_price,
-        #               "청산가: ", liquidation_price,
-        #               "포지션: ", tmp_position["type"],
-        #               "거래 수수료: ", 0.0004 * tmp_position["amount"] * 2, '\n',
-        #               "당 거래 수익률: ", pnl,
-        #               "당 거래 수익금: ", pnl * tmp_position["amount"],
-        #               "수익률 합계: ", sum(pnl_rate_list),
-        #               "수익금 합계: ", sum(pnl_price_list)
-        #               )
-        #
-        #         # 텔레그램 알림
-        #         msg = '수익률: {0}'.format(utils.calc_pnl(tmp_position, order_price, cur_price))
-        #         utils.telegramMassageBot(msg)
-        #
-        # # 목표가 갱신
-        # if now.hour % 4 == 1 and now.minute == 0 and (20 <= now.second < 30):
-        #     print("=" * 100)
-        #     print("목표가 갱신")
-        #     long_target, short_target = utils.calc_target(binance, symbol)
-        #     op_mode = True
-        #     # 잔고
-        #     balance = binance.fetch_balance()
-        #     usdt = balance['total']['USDT']
-        #     time.sleep(10)
-        '''
 
         # 포지션 진입
         if op_mode and position['type'] is None:
@@ -229,10 +212,10 @@ while True:
                 print(
                     "진입시간 :", position['time'],
                     "포지션 :", position['type'],
-                    "주문가 :", order_price,
+                    "주문가 :", position["order_price"],
                     "주문수량 :", position['amount'],
                     "현재가 :", cur_price, '\n'
-                    "수익률 :", utils.calc_pnl(position, order_price, cur_price),
+                    "수익률 :", utils.calc_pnl(position, cur_price),
                     "BTC 20일선 이격률 :", btc_sma20_sep_rate,
                     "op_mode :", op_mode
                 )

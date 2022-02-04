@@ -43,7 +43,7 @@ def calc_target(exchange, symbol):
         return long_target, short_target
     except Exception as e:
         print("calc_target", e)
-        telegramMassageBot(e)
+        telegramMassageBot("calc_target" + str(e))
 
 
 # 주문 수량 계산
@@ -63,32 +63,13 @@ def cal_amount(usdt_balnce, cur_price, leverage):
         return amount
     except Exception as e:
         print("cal_amount", e)
-        telegramMassageBot(e)
+        telegramMassageBot("cal_amount" + str(e))
 
 
 # 포지션 진입
 def enter_position(exchange, symbol, cur_price, long_target, short_target, amount, position):
     try:
-        '''
-        # test
-        position['type'] = 'long'
-        position['amount'] = amount
 
-        print("=" * 100)
-        now = datetime.datetime.now()
-        print(now)
-        print("long position order")
-        print("amount : ", amount, "order price : ", cur_price)
-
-        # 텔레그렘 알림
-        msg = 'LONG POSITION ORDER\n수량 : {0}\n주문가격 : {1}'.format(amount, cur_price)
-        telegramMassageBot(msg)
-
-        exchange.create_market_buy_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 long order
-
-        return cur_price, position
-        # test
-        '''
         # rsi14 가 70보다 크거나 30보다 작으면 매매를 하지 않는다.
         rsi14 = rsi_binance(timeframe, symbol)
         if rsi14 > 70 or rsi14 < 30:
@@ -98,13 +79,14 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
         btc_sma20_sep_rate = calc_btc_sma20_sep_rate()
         # btc over sma20
         # long position
-        if btc_sma20_sep_rate > 0:
+        if btc_sma20_sep_rate > 0.5:
             if cur_price > long_target:
                 now = datetime.datetime.now()
 
                 position['type'] = 'long'
                 position['amount'] = amount
                 position['time'] = now
+                position['order_price'] = cur_price
 
                 print("=" * 100)
                 print(now)
@@ -120,21 +102,26 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
 
                 # db insert
                 dict_data = {
-                    '주문시간': str(now),
-                    '주문가': cur_price,
-                    '포지션': position['type'],
+                    'symbol': symbol,
+                    'side': position['type'],
+                    'price': cur_price,
+                    'quantity': amount,
+                    'fee': calc_fee(cur_price),
+                    'pnl': 0,
+                    'trade_time': now,
                 }
                 db_helper.insert_db_history(dict_data)
 
         # btc under sma20
         # short position
-        elif btc_sma20_sep_rate < 0:
+        elif btc_sma20_sep_rate < -0.5:
             if cur_price < short_target:
                 now = datetime.datetime.now()
 
                 position['type'] = 'short'
                 position['amount'] = amount
                 position['time'] = now
+                position['order_price'] = cur_price
 
                 print("=" * 100)
                 print(now)
@@ -146,13 +133,16 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
                 telegramMassageBot(msg)
 
                 exchange.create_market_sell_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 short order
-                # exchange.create_limit_sell_order(symbol=symbol, amount=amount, price=cur_price)  # 바이낸스 지정가 short order
 
                 # db insert
                 dict_data = {
-                    '주문시간': str(now),
-                    '주문가': cur_price,
-                    '포지션': position['type'],
+                    'symbol': symbol,
+                    'side': position['type'],
+                    'price': cur_price,
+                    'quantity': amount,
+                    'fee': calc_fee(cur_price),
+                    'pnl': 0,
+                    'trade_time': now,
                 }
                 db_helper.insert_db_history(dict_data)
 
@@ -160,87 +150,47 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
 
     except Exception as e:
         print("enter_position", e)
-        telegramMassageBot(e)
+        telegramMassageBot("enter_position" + str(e))
 
 
 # 포지션 청산
-def exit_position(exchange, symbol, position):
+def exit_position(exchange, symbol, position, amount):
     try:
-        amount = position['amount']
         # 현재가격
         coin = exchange.fetch_ticker(symbol=symbol)
         cur_price = coin['last']
 
-        '''
-        # test
-        exchange.create_market_sell_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 long liquidation
-        position['type'] = None
-
-        print("=" * 100)
-        now = datetime.datetime.now()
-        print(now)
-        print("long position liquidation")
-        print("liquidation price : ", cur_price)
-
-        # 텔레그렘 알림
-        msg = 'LONG POSITION LIQUIDATION\n청산가격 : {0}'.format(cur_price)
-        telegramMassageBot(msg)
-
-        return cur_price
-        # test
-        '''
-
         if position['type'] == 'long':
             exchange.create_market_sell_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 long liquidation
-            # exchange.create_limit_sell_order(symbol=symbol, amount=amount, price=cur_price)  # 바이낸스 지정가 long liquidation
-            position['type'] = None
+            position['amount'] -= amount
+            if position['amount'] == 0:
+                position['type'] = None
 
-            print("=" * 100)
-            now = datetime.datetime.now()
-            print(now)
-            print("long position liquidation")
-            print("liquidation price : ", cur_price)
-
-            # 텔레그렘 알림
-            msg = 'LONG POSITION LIQUIDATION\n청산가격 : {0}'.format(cur_price)
-            telegramMassageBot(msg)
+            print_console_exit_position(cur_price, position['type'])
 
         elif position['type'] == 'short':
             exchange.create_market_buy_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 short liquidation
-            # exchange.create_limit_buy_order(symbol=symbol, amount=amount, price=cur_price)  # 바이낸스 지정가 long liquidation
-            position['type'] = None
+            position['amount'] -= amount
+            if position['amount'] == 0:
+                position['type'] = None
 
-            print("=" * 100)
-            now = datetime.datetime.now()
-            print(now)
-            print("short position liquidation")
-            print("liquidation price : ", cur_price)
-
-            # 텔레그렘 알림
-            msg = 'SHORT POSITION LIQUIDATION\n청산가격 : {0}'.format(cur_price)
-            telegramMassageBot(msg)
+            print_console_exit_position(cur_price, position['type'])
         else:
             return cur_price, position
-        # db update
-        dict_data = {
-            '청산시간': str(now),
-            '청산가': cur_price,
-        }
-        db_helper.update_db_history(dict_data)
 
         return cur_price, position
     except Exception as e:
         print("exit_position", e)
-        telegramMassageBot(e)
+        telegramMassageBot("exit_position" + str(e))
 
 
 # 청산 주문
-def exec_exit_order(exchange, symbol, position, pnl_rate_list, pnl_price_list, pnl, order_price):
+def exec_exit_order(exchange, symbol, position, pnl_rate_list, pnl_price_list, pnl, amount):
     try:
         # 콘솔용 포지션 변수
         tmp_position = position.copy()
 
-        liquidation_price, position = exit_position(exchange, symbol, position)
+        liquidation_price, position = exit_position(exchange, symbol, position, amount)
 
         # 콘솔용 계산식
 
@@ -249,10 +199,10 @@ def exec_exit_order(exchange, symbol, position, pnl_rate_list, pnl_price_list, p
 
         now = datetime.datetime.now()
         print(now)
-        print("주문가: ", order_price,
+        print("주문가: ", tmp_position["order_price"],
               "청산가: ", liquidation_price,
               "포지션: ", tmp_position["type"],
-              "거래 수수료: ", calc_fee(order_price, liquidation_price) * tmp_position["amount"], '\n',
+              "거래 수수료: ", calc_fee(liquidation_price) * tmp_position["amount"], '\n',
               "당 거래 수익률: ", pnl,
               "당 거래 수익금: ", pnl * tmp_position["amount"],
               "수익률 합계: ", sum(pnl_rate_list),
@@ -262,6 +212,23 @@ def exec_exit_order(exchange, symbol, position, pnl_rate_list, pnl_price_list, p
         # 텔레그램 알림
         msg = '수익률: {0}'.format(pnl)
         telegramMassageBot(msg)
+
+        # db insert
+        side = 'long'
+        if tmp_position['type'] == 'long':
+            side = 'short'
+        else:
+            pass
+        dict_data = {
+            'symbol': symbol,
+            'side': side,
+            'price': liquidation_price,
+            'quantity': tmp_position["amount"],
+            'fee': calc_fee(liquidation_price),
+            'pnl': pnl * tmp_position["amount"] - calc_fee(liquidation_price),
+            'trade_time': now,
+        }
+        db_helper.insert_db_history(dict_data)
 
         return position, pnl_rate_list, pnl_price_list
     except Exception as e:
@@ -277,7 +244,7 @@ def calc_btc_sma20_sep_rate():
         return round((cur_price / sma20.iloc[-1]) * 100 - 100, 3)
     except Exception as e:
         print("calc_btc_sma20_sep_rate", e)
-        telegramMassageBot(e)
+        telegramMassageBot("calc_btc_sma20_sep_rate" + str(e))
 
 
 # rsi 계산기
@@ -296,7 +263,7 @@ def rsi_calc(ohlc: pd.DataFrame, period: int = 14):
         return pd.Series(100 - (100 / (1 + RS)), name="RSI")
     except Exception as e:
         print("rsi_calc", e)
-        telegramMassageBot(e)
+        telegramMassageBot("rsi_calc" + str(e))
 
 
 def rsi_binance(itv, symbol):
@@ -308,24 +275,22 @@ def rsi_binance(itv, symbol):
         return round(rsi, 3)
     except Exception as e:
         print("rsi_binance", e)
-        telegramMassageBot(e)
+        telegramMassageBot("rsi_binance" + str(e))
 
 
 # pnl 계산
-def calc_pnl(position, order_price, liquidation_price):
+def calc_pnl(position, liquidation_price):
     try:
-        pnl = float(liquidation_price) / float(order_price) * 100 - 100
+        pnl = float(liquidation_price) / float(position["order_price"]) * 100 - 100
         if position["type"] == 'long':
             pass
         elif position["type"] == 'short':
             pnl *= -1
 
-        fee = calc_fee(order_price, liquidation_price)
-
-        return round(pnl - fee, 4)
+        return round(pnl, 4)
     except Exception as e:
         print("calc_pnl", e)
-        telegramMassageBot(e)
+        telegramMassageBot("calc_pnl" + str(e))
 
 
 # noise ratio 계산
@@ -341,11 +306,11 @@ def calc_noise_ratio(period, df):
 
 
 # fee 계산
-def calc_fee(order_price, liquidation_price):
+def calc_fee(price):
     # 거래 수수료율
-    # 주문가격 x 수수료 + 판매가격 x 수수료
+    # 가격 x 수수료
     fee_rate = 0.0004
-    fee = (order_price + liquidation_price) * fee_rate
+    fee = price * fee_rate
     return fee
 
 
@@ -357,3 +322,16 @@ def telegramMassageBot(msg):
         requests.get(teleurl, params=params)
     except:
         print('telegram error')
+
+
+# 포지션 청산 콜솔 프린트
+def print_console_exit_position(cur_price, side):
+    print("=" * 100)
+    now = datetime.datetime.now()
+    print(now)
+    print("{0} position liquidation".format(side))
+    print("liquidation price : ", cur_price)
+
+    # 텔레그렘 알림
+    msg = '{0} POSITION LIQUIDATION\n청산가격 : {1}'.format(str(side).upper(), cur_price)
+    telegramMassageBot(msg)

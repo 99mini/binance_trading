@@ -1,4 +1,5 @@
 import datetime
+import pprint
 
 import utils
 from main import *
@@ -49,3 +50,7 @@ symbol = "SAND/USDT"
 #     "RSI14 : ", utils.rsi_binance(utils.timeframe, symbol),
 #     "op_mode : ", op_mode
 # )
+
+binance_position = binance.fetch_balance()
+
+pprint.pprint(binance_position)
