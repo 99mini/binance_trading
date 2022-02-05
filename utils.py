@@ -162,18 +162,22 @@ def exit_position(exchange, symbol, position, amount):
         if position['type'] == 'long':
             exchange.create_market_sell_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 long liquidation
             position['amount'] -= amount
+
+            print_console_exit_position(cur_price, position['type'])
+
             if position['amount'] == 0:
                 position['type'] = None
 
-            print_console_exit_position(cur_price, position['type'])
 
         elif position['type'] == 'short':
             exchange.create_market_buy_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 short liquidation
             position['amount'] -= amount
+
+            print_console_exit_position(cur_price, position['type'])
+
             if position['amount'] == 0:
                 position['type'] = None
 
-            print_console_exit_position(cur_price, position['type'])
         else:
             return cur_price, position
 
