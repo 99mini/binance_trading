@@ -5,7 +5,7 @@ import time
 import utils
 from main import *
 
-symbol = "XRP/USDT"
+symbol = "SAND/USDT"
 
 long_target, short_target = utils.calc_target(binance, symbol)
 
@@ -98,6 +98,10 @@ while True:
                 # 분할매대비율 10% 증가
                 if pnl > take_profit_rate * split_sell_rate:
                     liquidation_amount = math.trunc(position['amount'] / 5)
+                    # 주문가가 5달러 이하일 경우 주문 오류 => 전량 주문으로 변경
+                    if liquidation_amount * cur_price < 5:
+                        liquidation_amount = position['amount']
+
                     position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
                         exchange=binance,
                         symbol=symbol,
@@ -177,7 +181,7 @@ while True:
                                                          amount,
                                                          position
                                                          )
-            split_sell_rate = 1
+            split_sell_rate = 0.8
 
         # 콘솔 프린트
         if 0 <= now.second % 10 <= 1:

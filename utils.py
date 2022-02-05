@@ -31,7 +31,6 @@ def calc_target(exchange, symbol):
 
         # noise 계산
         noise_ratio = calc_noise_ratio(period=13, df=df)
-
         # 반올림 고려 최소 가격 변화
         # 참조 : https://www.binance.com/en/trade-rule
         min_price_movement = 4  # SANDUSDT 의 최소 가격 변화 = 0.0001
@@ -193,9 +192,9 @@ def exec_exit_order(exchange, symbol, position, pnl_rate_list, pnl_price_list, p
         liquidation_price, position = exit_position(exchange, symbol, position, amount)
 
         # 콘솔용 계산식
-
+        # TODO pnl_rate_list
         pnl_rate_list.append(pnl)
-        pnl_price_list.append(pnl * tmp_position["amount"])
+        pnl_price_list.append(pnl * amount)
 
         now = datetime.datetime.now()
         print(now)

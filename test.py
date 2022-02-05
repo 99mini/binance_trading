@@ -1,4 +1,5 @@
 import datetime
+import math
 import pprint
 
 import utils
@@ -50,18 +51,5 @@ symbol = "SAND/USDT"
 #     "RSI14 : ", utils.rsi_binance(utils.timeframe, symbol),
 #     "op_mode : ", op_mode
 # )
-ex = True
-ratio = 1
-while True:
-    a = 1
-    if ex:
-        print("if")
-        print(a)
-        ex = not ex
-    else:
-        print("else")
-        ratio *= 1.1
-        a *= ratio
-        print(a)
-        if a > 3:
-            break
+
+print(math.trunc(9/5))
