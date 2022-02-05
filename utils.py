@@ -294,15 +294,17 @@ def calc_pnl(position, liquidation_price):
 
 # noise ratio 계산
 def calc_noise_ratio(period, df):
-    # 노이즈 = 1 - 절댓값(시가-종가)  / (고가-저가)
-    # noise = 1 - abs(previous_data['open'] - previous_data['close']) / (previous_data['high'] - previous_data['low'])
-    sum_noise = 0
-    for i in range(2, period + 2):
-        tmp_data = df.iloc[-i]
-        sum_noise += 1 - abs(tmp_data['open'] - tmp_data['close']) / (tmp_data['high'] - tmp_data['low'])
-    noise_ratio = round(sum_noise / period, 4)
-    return noise_ratio
-
+    try:
+        # 노이즈 = 1 - 절댓값(시가-종가)  / (고가-저가)
+        # noise = 1 - abs(previous_data['open'] - previous_data['close']) / (previous_data['high'] - previous_data['low'])
+        sum_noise = 0
+        for i in range(2, period + 2):
+            tmp_data = df.iloc[-i]
+            sum_noise += 1 - abs(tmp_data['open'] - tmp_data['close']) / (tmp_data['high'] - tmp_data['low'])
+        noise_ratio = round(sum_noise / period, 4)
+        return noise_ratio
+    except Exception as e:
+        print('calc_noise_ratio', e)
 
 # fee 계산
 def calc_fee(price):

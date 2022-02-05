@@ -95,12 +95,14 @@ while True:
                 # 1시간 이내에 익절 구간있으면 익절
                 # 수익률이 목표수익률 * 분할매도비율 이상이면
                 # 수량의 25% 청산
-                # 분할매대비율 10% 증가
+                # 분할매도비율 10% 증가
                 if pnl > take_profit_rate * split_sell_rate:
                     liquidation_amount = math.trunc(position['amount'] / 5)
+
                     # 주문가가 5달러 이하일 경우 주문 오류 => 전량 주문으로 변경
                     if liquidation_amount * cur_price < 5:
                         liquidation_amount = position['amount']
+                        op_mode = False
 
                     position, pnl_rate_list, pnl_price_list = utils.exec_exit_order(
                         exchange=binance,
@@ -111,6 +113,7 @@ while True:
                         pnl=pnl,
                         amount=liquidation_amount
                     )
+
                     split_sell_rate *= 1.1
 
             # 포지션 잡은 후 1시간 ~ 4시간 사이
