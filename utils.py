@@ -1,6 +1,6 @@
-import math
 import datetime
-import ccxt
+import math
+
 import numpy as np
 import pandas as pd
 import requests
@@ -68,8 +68,18 @@ def cal_amount(usdt_balance, cur_price, leverage):
 
 # 포지션 진입
 def enter_position(exchange, symbol, cur_price, long_target, short_target, amount, position):
-    try:
+    """
+    :param exchange:
+    :param symbol:
+    :param cur_price:
+    :param long_target:
+    :param short_target:
+    :param amount:
+    :param position:
+    :return:
+    """
 
+    try:
         # rsi14 가 70보다 크거나 30보다 작으면 매매를 하지 않는다.
         rsi14 = rsi_binance(timeframe, symbol)
         if rsi14 > 70 or rsi14 < 30:
@@ -115,14 +125,16 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
                 }
                 db_helper.insert_db_history(history_data)
 
-                # db trading insert
+                # db trading update
                 trading_data = {
                     'symbol': symbol,
                     'side': position['side'],
                     'quantity': amount,
                     'order_price': cur_price,
+                    'order_time': str(now),
+                    'op_mode': position['op_mode']
                 }
-                db_helper.insert_db_trading(trading_data)
+                db_helper.update_db_trading(trading_data)
 
         # btc under sma20
         # short position
@@ -160,14 +172,16 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
                 }
                 db_helper.insert_db_history(dict_data)
 
-                # db trading insert
+                # db trading update
                 trading_data = {
                     'symbol': symbol,
                     'side': position['side'],
                     'quantity': amount,
                     'order_price': cur_price,
+                    'op_mode': 1,
+                    'order_time': str(now)
                 }
-                db_helper.insert_db_trading(trading_data)
+                db_helper.update_db_trading(trading_data)
 
         return cur_price, position
 
@@ -248,7 +262,9 @@ def exec_exit_order(exchange, symbol, position, pnl, amount):
             'symbol': symbol,
             'side': position['side'],
             'quantity': position['amount'],
-            'op_mode': op_mode
+            'order_price': position['order_price'],
+            'op_mode': op_mode,
+            'order_time': position['order_time']
         }
         db_helper.update_db_trading(trading_data)
 
@@ -264,8 +280,8 @@ def update_targets(symbols):
         side = data['side']
         if side == 'None':
             # 포지션이 없는 경우 목표가 갱신
-            print("=" * 100)
             print("{0}목표가 갱신".format(symbol))
+            print("=" * 100)
 
             long_target, short_target = calc_target(binance, symbol)
 
@@ -273,7 +289,7 @@ def update_targets(symbols):
             db_helper.update_db_target(symbol=symbol, long_target=long_target, short_target=short_target)
 
             # db trading table update
-            db_helper.update_db_trading({'side': 'None', 'quantity': 0, 'order_price': 0, 'op_mode': 1, 'symbol': symbol})
+            db_helper.update_db_trading({'side': 'None', 'quantity': 0, 'order_price': 0, 'op_mode': 1, 'order_time':'','symbol': symbol})
 
 
 # 비트코인 20일선 이격률 계산

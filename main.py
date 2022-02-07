@@ -34,7 +34,8 @@ for symbol in symbols:
         'side': 'None',
         'quantity': 0,
         'order_price': 0,
-        'op_mode': 0
+        'op_mode': 0,
+        'order_time': ''
     }
     is_coin = db_helper.select_db_trading(symbol=symbol)
     if is_coin:
