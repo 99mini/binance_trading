@@ -15,10 +15,7 @@ def select_db_history():
         rows = cs.fetchall()
         target = rows[-1]
         cs.close()
-        if target:
-            return dict(target)
-        else:
-            return False
+        return dict(target)
     except Exception as e:
         print("select_db_history: ", e)
 
@@ -26,12 +23,23 @@ def select_db_history():
 def select_db_trading(symbol):
     try:
         cs = con.cursor()
-        cs.execute("SELECT * FROM trading_table WHERE symbol = ?",(symbol,))
+        cs.execute("SELECT * FROM trading_table WHERE symbol = ?", (symbol,))
         target = cs.fetchone()
         cs.close()
         return dict(target)
     except Exception as e:
         print("select_db_trading: ", e)
+
+
+def select_db_target(symbol):
+    try:
+        cs = con.cursor()
+        cs.execute("SELECT * FROM target_table WHERE symbol = ?", (symbol,))
+        target = cs.fetchone()
+        cs.close()
+        return dict(target)
+    except Exception as e:
+        print("select_db_target: ", e)
 
 
 def insert_db_history(dict_data):
@@ -57,12 +65,13 @@ def insert_db_trading(dict_data):
     try:
         cs = con.cursor()
         cs.execute(
-            "INSERT INTO trading_table VALUES(:symbol,:side,:price,:quantity)",
+            "INSERT INTO trading_table VALUES(:symbol,:side,:quantity,:order_price,:op_mode)",
             {
                 'symbol': dict_data['symbol'],
                 'side': dict_data['side'],
-                'price': dict_data['price'],
                 'quantity': dict_data['quantity'],
+                'order_price': dict_data['order_price'],
+                'op_mode': dict_data['op_mode']
             }
         )
         cs.close()
@@ -70,17 +79,51 @@ def insert_db_trading(dict_data):
         print("insert_db_trading: ", e)
 
 
+def insert_db_target(symbol, long_target, short_target):
+    try:
+        cs = con.cursor()
+        cs.execute(
+            "INSERT INTO target_table VALUES(:symbol,:long_target,:short_target)",
+            {
+                'symbol': symbol,
+                'long_target': long_target,
+                'short_target': short_target,
+            }
+        )
+        cs.close()
+    except Exception as e:
+        print("insert_db_target: ", e)
+
+
 def update_db_trading(dict_data):
     try:
         cs = con.cursor()
 
         cs.execute(
-            "UPDATE trading_table SET side=:side,price=:price, quantity=:quantity WHERE symbol=:symbol",
-            {'side': dict_data['side'],
-             'price': dict_data['price'],
-             'quantity': dict_data['quantity'],
-             'symbol': dict_data['symbol']
-             }
+            "UPDATE trading_table SET side=:side,quantity=:quantity,op_mode=:op_mode WHERE symbol=:symbol",
+            {
+                'side': dict_data['side'],
+                'quantity': dict_data['quantity'],
+                'op_mode': dict_data['op_mode'],
+                'symbol': dict_data['symbol']
+            }
+        )
+
+        cs.close()
+    except Exception as e:
+        print("update_db_trading: ", e)
+
+
+def update_db_target(symbol, long_target, short_target):
+    try:
+        cs = con.cursor()
+        cs.execute(
+            "UPDATE target_table SET long_target=:long_target,short_target=:short_target WHERE symbol=:symbol",
+            {
+                'long_target': long_target,
+                'short_target': short_target,
+                'symbol': symbol,
+            }
         )
 
         cs.close()
@@ -115,3 +158,4 @@ def delete_db_all(table):
         cs.close()
     except Exception as e:
         print('delete_db_all', e)
+

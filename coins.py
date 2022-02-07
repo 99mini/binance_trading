@@ -1,10 +1,18 @@
+import ccxt
 import pandas as pd
 
-from main import *
+from config import *
 
-DAY_LEN = 121
-DATA_LEN = 120
-TIME_FRAME = '1h'
+binance = ccxt.binance(config={
+    'apiKey': api_key,
+    'secret': secret,
+    'enableRateLimit': True,
+    'options': {
+        'defaultType': 'future'
+    }
+})
+
+
 
 btc = binance.fetch_ohlcv(
     symbol="BTC/USDT",
