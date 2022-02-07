@@ -101,13 +101,11 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
 
                 # db insert
                 dict_data = {
+                    'order_time': now,
                     'symbol': symbol,
                     'side': position['type'],
                     'price': cur_price,
                     'quantity': amount,
-                    'fee': calc_fee(cur_price),
-                    'pnl': 0,
-                    'trade_time': now,
                 }
                 db_helper.insert_db_history(dict_data)
 
@@ -135,13 +133,11 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
 
                 # db insert
                 dict_data = {
+                    'order_time': now,
                     'symbol': symbol,
                     'side': position['type'],
                     'price': cur_price,
                     'quantity': amount,
-                    'fee': calc_fee(cur_price),
-                    'pnl': 0,
-                    'trade_time': now,
                 }
                 db_helper.insert_db_history(dict_data)
 
@@ -219,13 +215,11 @@ def exec_exit_order(exchange, symbol, position, pnl_rate_list, pnl_price_list, p
         else:
             pass
         dict_data = {
+            'order_time': now,
             'symbol': symbol,
             'side': side,
             'price': liquidation_price,
             'quantity': tmp_position["amount"],
-            'fee': calc_fee(liquidation_price),
-            'pnl': pnl * tmp_position["amount"] - calc_fee(liquidation_price),
-            'trade_time': now,
         }
         db_helper.insert_db_history(dict_data)
 

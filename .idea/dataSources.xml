@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="coin_buy_sell.db" uuid="5e394caa-c991-476b-8d20-2b909d5ce481">
+    <data-source source="LOCAL" name="coins.db" uuid="c2f9d0cc-9c56-4dc0-93bd-81ea4693a680">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/../binance_backtracking/coin_buy_sell.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/coins.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
