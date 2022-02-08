@@ -6,7 +6,7 @@ import utils
 import volatility_trading_bot
 from coins import *
 
-symbols = ['SAND/USDT', 'MANA/USDT', 'XRP/USDT']
+symbols = ['SAND/USDT', 'MANA/USDT', 'XRP/USDT', 'EOS/USDT', 'ADA/USDT']
 
 now = datetime.datetime.now()
 
@@ -34,14 +34,16 @@ for symbol in symbols:
         'side': 'None',
         'quantity': 0,
         'order_price': 0,
+        'order_time': '',
         'op_mode': 0,
-        'order_time': ''
+        'split_rate': 0.8
     }
     is_coin = db_helper.select_db_trading(symbol=symbol)
     if is_coin:
         db_helper.update_db_trading(dict_data=dict_data)
     else:
         db_helper.insert_db_trading(dict_data=dict_data)
+    time.sleep(1)
 
 while True:
     now = datetime.datetime.now()
@@ -49,4 +51,4 @@ while True:
         utils.update_targets(symbols=symbols)
     for symbol in symbols:
         volatility_trading_bot.exec_trading(symbol=symbol, now=now)
-        time.sleep(1)
+        time.sleep(0.5)

@@ -2,8 +2,8 @@ import datetime
 import math
 import pprint
 
+import db_helper
 import utils
-from main import *
 
 symbol = "SAND/USDT"
 #
@@ -52,4 +52,11 @@ symbol = "SAND/USDT"
 #     "op_mode : ", op_mode
 # )
 
-print(math.trunc(9/5))
+
+now = datetime.datetime.now()
+order_time = '2022-02-08 21:01:18.153997'
+print(order_time)
+order_time = datetime.datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S.%f")
+time_diff = now - order_time
+
+print(time_diff.seconds > 10)

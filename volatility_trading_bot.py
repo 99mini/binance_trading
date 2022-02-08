@@ -1,3 +1,4 @@
+import datetime
 import math
 
 import config
@@ -5,27 +6,27 @@ import db_helper
 import utils
 from coins import binance
 
-# 분할 매도 비율
-split_sell_rate = 0.8
-
 # 익절률 | 손절률
-take_profit_rate = 1.3
-loss_cut_rate = - 1.2
+take_profit_rate = 1.4
+loss_cut_rate = - 1.3
 
 # 레버리지
-leverage = 20
+leverage = 10
 
 
 def exec_trading(symbol, now):
-    global split_sell_rate, take_profit_rate, loss_cut_rate, leverage
+    global take_profit_rate, loss_cut_rate, leverage
     try:
         # 포지션 상태
         trading_data = db_helper.select_db_trading(symbol)
         '''
+         'symbol' : symbol
          'side' : long / short
-         'quantity' : 주문 수량
-         'order_price' : 주문 가격
-         'op_mode' : 포지션 가능 여부 ( T -> 진입 | F -> 진입 X )
+         'quantity' : 주문 수량 (int)
+         'order_price' : 주문 가격 (float)
+         'order_time' : 주문 시간 (string)
+         'op_mode' : 포지션 가능 여부 ( 1 -> 진입 | 0 -> 진입 X )
+         'split_rate' : 분할 매도 비율 (float)
         '''
 
         # 현재가
@@ -44,7 +45,9 @@ def exec_trading(symbol, now):
         if trading_data['op_mode'] == 1 and trading_data['side'] != 'None':
 
             # 주문시간과 현재시간의 차이
-            time_diff = now - trading_data['order_time']
+            order_time = trading_data['order_time']
+            order_time = datetime.datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S.%f")
+            time_diff = now - order_time
 
             # 수익률
             pnl = utils.calc_pnl(trading_data, cur_price)
@@ -63,7 +66,7 @@ def exec_trading(symbol, now):
                 # 수익률이 목표수익률 * 분할매도비율 이상이면
                 # 수량의 25% 청산
                 # 분할매도비율 10% 증가
-                if pnl > take_profit_rate * split_sell_rate:
+                if pnl > take_profit_rate * trading_data['split_rate']:
                     liquidation_amount = math.trunc(trading_data['quantity'] / 5)
 
                     # 주문가가 5달러 이하일 경우 주문 오류 => 전량 주문으로 변경
@@ -78,7 +81,6 @@ def exec_trading(symbol, now):
                         amount=liquidation_amount
                     )
 
-                    split_sell_rate *= 1.1
 
             # 포지션 잡은 후 1시간 ~ 4시간 사이
             elif 3600 + 10 < time_diff.seconds < 3600 * 4:
@@ -92,9 +94,6 @@ def exec_trading(symbol, now):
                         pnl=pnl,
                         amount=liquidation_amount
                     )
-                    # db trading table update
-                    trading_data['op_mode'] = 0
-                    db_helper.update_db_trading(dict_data=trading_data)
 
             # 포지션 잡은 후 4시간 이상이면 모든 포지션 종료
             elif time_diff.seconds >= 3600 * 4:
@@ -106,9 +105,6 @@ def exec_trading(symbol, now):
                     pnl=pnl,
                     amount=liquidation_amount
                 )
-                # db trading table update
-                trading_data['op_mode'] = 0
-                db_helper.update_db_trading(dict_data=trading_data)
 
             # 손절 시나리오
             # 손실률 loss_cut_rate 발생시 청산
@@ -122,9 +118,6 @@ def exec_trading(symbol, now):
                     pnl=pnl,
                     amount=liquidation_amount
                 )
-                # db trading table update
-                trading_data['op_mode'] = 0
-                db_helper.update_db_trading(dict_data=trading_data)
 
             # 포지션 진입
         if trading_data['op_mode'] == 1 and trading_data['side'] == 'None':
@@ -134,15 +127,13 @@ def exec_trading(symbol, now):
             # 구매 가능 자산
             amount = utils.cal_amount(usdt, cur_price, leverage)
 
-            order_price, trading_data = utils.enter_position(exchange=binance,
-                                                             symbol=symbol,
-                                                             cur_price=cur_price,
-                                                             long_target=long_target,
-                                                             short_target=short_target,
-                                                             amount=amount,
-                                                             position=trading_data
-                                                             )
-            split_sell_rate = 0.9
+            utils.enter_position(exchange=binance,
+                                 symbol=symbol,
+                                 cur_price=cur_price,
+                                 long_target=long_target,
+                                 short_target=short_target,
+                                 amount=amount,
+                                 )
 
         # 콘솔 프린트
         if 0 <= now.second % 10 <= 1:
@@ -158,7 +149,7 @@ def exec_trading(symbol, now):
                     "RSI14 :", utils.rsi_binance(config.TIME_FRAME, symbol),
                     "op_mode :", trading_data['op_mode']
                 )
-                print("# "*100,'\n')
+                print("# " * 100, '\n')
             # 포지션이 있는 경우
             else:
                 print(
@@ -172,7 +163,7 @@ def exec_trading(symbol, now):
                     "BTC 20일선 이격률 :", btc_sma20_sep_rate,
                     "op_mode :", trading_data['op_mode']
                 )
-                print("# "*100,'\n')
+                print("# " * 100, '\n')
 
     except Exception as e:
         print("Main Error : ", e)

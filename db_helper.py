@@ -74,14 +74,15 @@ def insert_db_trading(dict_data):
     try:
         cs = con.cursor()
         cs.execute(
-            "INSERT INTO trading_table VALUES(:symbol,:side,:quantity,:order_price,:op_mode,:order_time)",
+            "INSERT INTO trading_table VALUES(:symbol,:side,:quantity,:order_price,:op_mode,:order_time,:split_rate)",
             {
                 'symbol': dict_data['symbol'],
                 'side': dict_data['side'],
                 'quantity': dict_data['quantity'],
                 'order_price': dict_data['order_price'],
                 'op_mode': dict_data['op_mode'],
-                'order_time': dict_data['order_time']
+                'order_time': dict_data['order_time'],
+                'split_rate': 0.8
             }
         )
         cs.close()
@@ -110,13 +111,15 @@ def update_db_trading(dict_data):
         cs = con.cursor()
 
         cs.execute(
-            "UPDATE trading_table SET side=:side,quantity=:quantity,op_mode=:op_mode,order_time=:order_time WHERE symbol=:symbol",
+            "UPDATE trading_table SET side=:side,quantity=:quantity,op_mode=:op_mode,order_time=:order_time,order_price=:order_price,split_rate=:split_rate WHERE symbol=:symbol",
             {
                 'side': dict_data['side'],
                 'quantity': dict_data['quantity'],
                 'op_mode': dict_data['op_mode'],
                 'order_time': dict_data['order_time'],
-                'symbol': dict_data['symbol']
+                'order_price': dict_data['order_price'],
+                'split_rate': dict_data['split_rate'],
+                'symbol': dict_data['symbol'],
             }
         )
 
@@ -170,6 +173,6 @@ def delete_db_all(table):
     except Exception as e:
         print('delete_db_all', e)
 
-delete_db_all('trading_table')
-delete_db_all('trade_history')
-delete_db_all('target_table')
+# delete_db_all('trading_table')
+# delete_db_all('trade_history')
+# delete_db_all('target_table')
