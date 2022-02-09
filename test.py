@@ -10,7 +10,7 @@ symbol = "SAND/USDT"
 #
 # position = {
 #     "type": "short",
-#     "amount": 0,
+#     "quantity": 0,
 #     "time": datetime.datetime.now()
 # }
 #
@@ -22,7 +22,7 @@ symbol = "SAND/USDT"
 #
 # coin = binance.fetch_ticker(symbol=symbol)
 # cur_price = coin['last']
-# amount = utils.cal_amount(usdt, cur_price, 20)
+# quantity = utils.cal_quantity(usdt, cur_price, 20)
 
 #
 # print(datetime.datetime.now())
@@ -30,7 +30,7 @@ symbol = "SAND/USDT"
 #     "진입시간 :", position['time'], '\n'
 #     "포지션 :", position['type'],
 #     "주문가 :", order_price,
-#     "주문수량 :", position['amount'],
+#     "주문수량 :", position['quantity'],
 #     "현재가 :", cur_price, '\n'
 #     "수익률 :", utils.calc_pnl(position, order_price, cur_price),
 #     "BTC 20일선 이격률 :", utils.calc_btc_sma20_sep_rate(),

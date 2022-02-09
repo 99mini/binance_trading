@@ -50,5 +50,5 @@ while True:
     if now.minute == 0 and (10 < now.second < 20):
         utils.update_targets(symbols=symbols)
     for symbol in symbols:
-        volatility_trading_bot.exec_trading(symbol=symbol, now=now)
+        volatility_trading_bot.exec_trading(symbol=symbol)
         time.sleep(0.5)

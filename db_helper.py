@@ -7,6 +7,16 @@ db_path = os.path.join(BASE_DIR, 'coins.db')
 con = sqlite3.connect('coins.db', timeout=50000, isolation_level=None, check_same_thread=False)
 con.row_factory = sqlite3.Row
 
+def select_db_all(table):
+    try:
+        cs = con.cursor()
+        cs.execute("SELECT * FROM {0}".format(table))
+        results = cs.fetchall()
+        cs.close()
+        return results
+    except Exception as e:
+        print("select_db_all: ", e)
+
 
 def select_db_history():
     try:
