@@ -1,9 +1,4 @@
-import datetime
-import math
-import pprint
-
-import db_helper
-import utils
+import numpy as np
 
 symbol = "SAND/USDT"
 #
@@ -51,12 +46,4 @@ symbol = "SAND/USDT"
 #     "RSI14 : ", utils.rsi_binance(utils.timeframe, symbol),
 #     "op_mode : ", op_mode
 # )
-
-
-now = datetime.datetime.now()
-order_time = '2022-02-08 21:01:18.153997'
-print(order_time)
-order_time = datetime.datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S.%f")
-time_diff = now - order_time
-
-print(time_diff.seconds > 10)
+#TODO trading_table 에서 주문 시간 가져와서 시간 빼기 구현하기
