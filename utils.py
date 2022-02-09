@@ -118,7 +118,7 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, quant
                 msg = '{0}\nLONG POSITION ORDER\n수량 : {1}\n주문가격 : {2}'.format(symbol, quantity, cur_price)
                 telegramMassageBot(msg)
 
-                exchange.create_market_buy_order(symbol=symbol, quantity=quantity)  # 바이낸스 시장가 long order
+                exchange.create_market_buy_order(symbol=symbol, amount=quantity)  # 바이낸스 시장가 long order
 
                 # db history insert
                 history_data = {
@@ -164,7 +164,7 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, quant
                 msg = '{0}\nSHORT POSITION ORDER\n수량 : {1}\n주문가격 : {2}'.format(symbol, quantity, cur_price)
                 telegramMassageBot(msg)
 
-                exchange.create_market_sell_order(symbol=symbol, quantity=quantity)  # 바이낸스 시장가 short order
+                exchange.create_market_sell_order(symbol=symbol, amount=quantity)  # 바이낸스 시장가 short order
 
                 # db insert
                 dict_data = {
@@ -215,10 +215,10 @@ def exit_position(exchange, symbol, position, quantity, pnl):
         side = position['side']
 
         if position['side'] == 'long':
-            exchange.create_market_sell_order(symbol=symbol, quantity=quantity)  # 바이낸스 시장가 long liquidation
+            exchange.create_market_sell_order(symbol=symbol, amount=quantity)  # 바이낸스 시장가 long liquidation
 
         elif position['side'] == 'short':
-            exchange.create_market_buy_order(symbol=symbol, quantity=quantity)  # 바이낸스 시장가 short liquidation
+            exchange.create_market_buy_order(symbol=symbol, amount=quantity)  # 바이낸스 시장가 short liquidation
 
         position['quantity'] -= quantity
 

@@ -1,4 +1,10 @@
+import datetime
+import time
+
 import numpy as np
+
+import db_helper
+import utils
 
 symbol = "SAND/USDT"
 #
@@ -47,3 +53,21 @@ symbol = "SAND/USDT"
 #     "op_mode : ", op_mode
 # )
 #TODO trading_table 에서 주문 시간 가져와서 시간 빼기 구현하기
+symbols = ['SAND/USDT', 'MANA/USDT', 'XRP/USDT', 'EOS/USDT', 'ADA/USDT']
+
+# while True:
+utils.update_targets(symbols=symbols)
+for symbol in symbols:
+    trading_data = db_helper.select_db_trading(symbol)
+    #
+    #     now = datetime.datetime.now()
+    #     print(trading_data)
+    #     if trading_data['op_mode'] == 1 and trading_data['side'] != 'None':
+    #         order_time = trading_data['order_time']
+    #         order_time = datetime.datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S.%f")
+    #         print(symbol, "포지션 청산")
+    #         print((now - order_time).seconds)
+    #
+    #     if trading_data['op_mode'] == 1 and trading_data['side'] == 'None':
+    #         print(symbol,"포지션 진입")
+    # time.sleep(1)
