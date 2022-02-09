@@ -158,7 +158,7 @@ def exec_trading(symbol):
             else:
                 print(
                     "symbol:", symbol,
-                    "진입시간 :", trading_data['time'],
+                    "진입시간 :", trading_data['order_time'],
                     "포지션 :", trading_data['side'],
                     "주문가 :", trading_data["order_price"],
                     "주문수량 :", trading_data['quantity'],
