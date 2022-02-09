@@ -232,6 +232,7 @@ def exit_position(exchange, symbol, position, quantity, pnl):
         telegramMassageBot(msg)
 
         # db history insert
+        side = position['side']
         if side == 'short':
             side = 'long'
 

@@ -77,7 +77,7 @@ def exec_trading(symbol):
                     if liquidation_quantity * cur_price < 5:
                         liquidation_quantity = trading_data['quantity']
 
-                    trading_data = utils.exit_position(
+                    utils.exit_position(
                         exchange=binance,
                         symbol=symbol,
                         position=trading_data,
@@ -91,7 +91,7 @@ def exec_trading(symbol):
                 # 수익률 도달시 모든 포지션 종료
                 if pnl > take_profit_rate:
                     liquidation_quantity = trading_data['quantity']
-                    trading_data = utils.exit_position(
+                    utils.exit_position(
                         exchange=binance,
                         symbol=symbol,
                         position=trading_data,
@@ -102,7 +102,7 @@ def exec_trading(symbol):
             # 포지션 잡은 후 4시간 이상이면 모든 포지션 종료
             elif time_diff.seconds >= 3600 * 4:
                 liquidation_quantity = trading_data['quantity']
-                trading_data = utils.exit_position(
+                utils.exit_position(
                     exchange=binance,
                     symbol=symbol,
                     position=trading_data,
@@ -115,7 +115,7 @@ def exec_trading(symbol):
             # btc sma 양전 / 음전 시 청산
             if pnl < loss_cut_rate or reversal:
                 liquidation_quantity = trading_data['quantity']
-                trading_data = utils.exit_position(
+                utils.exit_position(
                     exchange=binance,
                     symbol=symbol,
                     position=trading_data,
