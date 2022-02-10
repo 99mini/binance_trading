@@ -116,7 +116,7 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
                     'symbol': symbol,
                     'side': 'long',
                     'price': cur_price,
-                    'quantity': amount,
+                    'amount': amount,
                 }
                 db_helper.insert_db_history(history_data)
 
@@ -124,7 +124,7 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
                 trading_data = {
                     'symbol': symbol,
                     'side': 'long',
-                    'quantity': amount,
+                    'amount': amount,
                     'order_price': cur_price,
                     'order_time': str(now),
                     'split_rate': 0.8,
@@ -162,7 +162,7 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
                     'symbol': symbol,
                     'side': 'short',
                     'price': cur_price,
-                    'quantity': amount,
+                    'amount': amount,
                 }
                 db_helper.insert_db_history(dict_data)
 
@@ -170,7 +170,7 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
                 trading_data = {
                     'symbol': symbol,
                     'side': 'short',
-                    'quantity': amount,
+                    'amount': amount,
                     'order_price': cur_price,
                     'op_mode': 1,
                     'split_rate': 0.8,
@@ -248,7 +248,7 @@ def exec_exit_order(exchange, symbol, position, pnl, amount):
             'symbol': symbol,
             'side': side,
             'price': liquidation_price,
-            'quantity': amount,
+            'amount': amount,
         }
         db_helper.insert_db_history(history_data)
 
@@ -259,7 +259,7 @@ def exec_exit_order(exchange, symbol, position, pnl, amount):
         trading_data = {
             'symbol': symbol,
             'side': position['side'],
-            'quantity': position['amount'],
+            'amount': position['amount'],
             'order_price': position['order_price'],
             'op_mode': op_mode,
             'order_time': position['order_time'],
@@ -292,7 +292,7 @@ def update_targets(symbols):
                 {
                     'symbol': symbol,
                     'side': 'None',
-                    'quantity': 0,
+                    'amount': 0,
                     'order_price': 0,
                     'order_time': '',
                     'op_mode': 1,

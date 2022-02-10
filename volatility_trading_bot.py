@@ -22,7 +22,7 @@ def exec_trading(symbol, now):
         '''
          'symbol' : symbol
          'side' : long / short
-         'quantity' : 주문 수량 (int)
+         'amount' : 주문 수량 (float)
          'order_price' : 주문 가격 (float)
          'order_time' : 주문 시간 (string)
          'op_mode' : 포지션 가능 여부 ( 1 -> 진입 | 0 -> 진입 X )
@@ -67,11 +67,11 @@ def exec_trading(symbol, now):
                 # 수량의 25% 청산
                 # 분할매도비율 10% 증가
                 if pnl > take_profit_rate * trading_data['split_rate']:
-                    liquidation_amount = math.trunc(trading_data['quantity'] / 5)
+                    liquidation_amount = math.trunc(trading_data['amount'] / 5)
 
                     # 주문가가 5달러 이하일 경우 주문 오류 => 전량 주문으로 변경
                     if liquidation_amount * cur_price < 5:
-                        liquidation_amount = trading_data['quantity']
+                        liquidation_amount = trading_data['amount']
 
                     trading_data = utils.exec_exit_order(
                         exchange=binance,
@@ -86,7 +86,7 @@ def exec_trading(symbol, now):
             elif 3600 + 10 < time_diff.seconds < 3600 * 4:
                 # 수익률 도달시 모든 포지션 종료
                 if pnl > take_profit_rate:
-                    liquidation_amount = trading_data['quantity']
+                    liquidation_amount = trading_data['amount']
                     trading_data = utils.exec_exit_order(
                         exchange=binance,
                         symbol=symbol,
@@ -97,7 +97,7 @@ def exec_trading(symbol, now):
 
             # 포지션 잡은 후 4시간 이상이면 모든 포지션 종료
             elif time_diff.seconds >= 3600 * 4:
-                liquidation_amount = trading_data['quantity']
+                liquidation_amount = trading_data['amount']
                 trading_data = utils.exec_exit_order(
                     exchange=binance,
                     symbol=symbol,
@@ -110,7 +110,7 @@ def exec_trading(symbol, now):
             # 손실률 loss_cut_rate 발생시 청산
             # btc sma 양전 / 음전 시 청산
             if pnl < loss_cut_rate or reversal:
-                liquidation_amount = trading_data['quantity']
+                liquidation_amount = trading_data['amount']
                 trading_data = utils.exec_exit_order(
                     exchange=binance,
                     symbol=symbol,
@@ -154,10 +154,10 @@ def exec_trading(symbol, now):
             else:
                 print(
                     "symbol:", symbol,
-                    "진입시간 :", trading_data['time'],
+                    "진입시간 :", trading_data['order_time'],
                     "포지션 :", trading_data['side'],
                     "주문가 :", trading_data["order_price"],
-                    "주문수량 :", trading_data['quantity'],
+                    "주문수량 :", trading_data['amount'],
                     "현재가 :", cur_price, '\n'
                                         "수익률 :", utils.calc_pnl(trading_data, cur_price),
                     "BTC 20일선 이격률 :", btc_sma20_sep_rate,
