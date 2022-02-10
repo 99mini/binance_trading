@@ -184,70 +184,40 @@ def enter_position(exchange, symbol, cur_price, long_target, short_target, amoun
 
 
 # 포지션 청산
-def exit_position(exchange, symbol, position, amount):
+def exit_position(exchange, symbol, position, pnl, amount):
     try:
         # 현재가격
         coin = exchange.fetch_ticker(symbol=symbol)
         cur_price = coin['last']
 
+        now = datetime.datetime.now()
+
         if position['side'] == 'long':
             exchange.create_market_sell_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 long liquidation
-            position['amount'] -= amount
-
-            print_console_exit_position(cur_price, position['type'])
-
-            if position['amount'] == 0:
-                position['side'] = None
-
-            print_console_exit_position(cur_price, position['side'])
-
 
         elif position['side'] == 'short':
             exchange.create_market_buy_order(symbol=symbol, amount=amount)  # 바이낸스 시장가 short liquidation
-            position['amount'] -= amount
 
-            print_console_exit_position(cur_price, position['type'])
+        position['amount'] -= amount
 
-            if position['amount'] == 0:
-                position['side'] = None
+        print_console_exit_position(cur_price, position['side'])
 
-
-            print_console_exit_position(cur_price, position['side'])
-
-    except Exception as e:
-        print("exit_position", e)
-        telegramMassageBot("exit_position" + str(e))
-
-
-# 청산 주문
-def exec_exit_order(exchange, symbol, position, pnl, amount):
-    try:
-        # 콘솔용 포지션 변수
-        tmp_position = position.copy()
-
-        liquidation_price, position = exit_position(exchange, symbol, position, amount)
-
-        now = datetime.datetime.now()
-        print(now)
-        print("주문가: ", tmp_position["order_price"],
-              "청산가: ", liquidation_price,
-              "포지션: ", tmp_position["side"],
-              "당 거래 수익률: ", pnl,
-              )
+        if position['amount'] == 0:
+            position['side'] = None
 
         # 텔레그램 알림
-        msg = '{0}\n수익률: {1}'.format(symbol,pnl)
+        msg = '{0}\n수익률: {1}'.format(symbol, pnl)
         telegramMassageBot(msg)
 
         # db history insert
         side = 'short'
-        if tmp_position['side'] == 'short':
+        if position['side'] == 'short':
             side = 'long'
         history_data = {
             'order_time': now,
             'symbol': symbol,
             'side': side,
-            'price': liquidation_price,
+            'price': cur_price,
             'amount': amount,
         }
         db_helper.insert_db_history(history_data)
@@ -267,10 +237,9 @@ def exec_exit_order(exchange, symbol, position, pnl, amount):
         }
         db_helper.update_db_trading(trading_data)
 
-        return position
     except Exception as e:
-        print("exec_exit_order : ", e)
-
+        print("exit_position", e)
+        telegramMassageBot("exit_position" + str(e))
 
 # update target price
 def update_targets(symbols):
