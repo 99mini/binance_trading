@@ -202,9 +202,6 @@ def exit_position(exchange, symbol, position, pnl, amount):
 
         print_console_exit_position(cur_price, position['side'])
 
-        if position['amount'] == 0:
-
-
         # 텔레그램 알림
         msg = '{0}\n수익률: {1}'.format(symbol, pnl)
         telegramMassageBot(msg)
