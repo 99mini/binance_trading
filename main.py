@@ -32,7 +32,7 @@ for symbol in symbols:
     dict_data = {
         'symbol': symbol,
         'side': 'None',
-        'quantity': 0,
+        'amount': 0,
         'order_price': 0,
         'order_time': '',
         'op_mode': 0,

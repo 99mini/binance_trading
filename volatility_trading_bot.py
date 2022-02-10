@@ -14,13 +14,12 @@ loss_cut_rate = - 1.3
 leverage = 10
 
 
-def exec_trading(symbol):
+def exec_trading(symbol, now):
     global take_profit_rate, loss_cut_rate, leverage
     try:
         # 포지션 상태
         trading_data = db_helper.select_db_trading(symbol)
         '''
-        trading_data
          'symbol' : symbol
          'side' : long / short
          'quantity' : 주문 수량 (int)
@@ -30,9 +29,6 @@ def exec_trading(symbol):
          'split_rate' : 분할 매도 비율 (float)
         '''
 
-        # 현재 시간
-        now = datetime.datetime.now()
-
         # 현재가
         coin = binance.fetch_ticker(symbol=symbol)
         cur_price = float(coin['last'])
@@ -41,11 +37,11 @@ def exec_trading(symbol):
         btc_sma20_sep_rate = utils.calc_btc_sma20_sep_rate()
 
         # target
-        target_data = db_helper.select_db_target(symbol=symbol)
-        long_target = target_data['long_target']
-        short_target = target_data['short_target']
+        data = db_helper.select_db_target(symbol=symbol)
+        long_target = data['long_target']
+        short_target = data['short_target']
 
-        '''포지션 종료'''
+        # 포지션 종료
         if trading_data['op_mode'] == 1 and trading_data['side'] != 'None':
 
             # 주문시간과 현재시간의 차이
@@ -71,18 +67,18 @@ def exec_trading(symbol):
                 # 수량의 25% 청산
                 # 분할매도비율 10% 증가
                 if pnl > take_profit_rate * trading_data['split_rate']:
-                    liquidation_quantity = math.trunc(trading_data['quantity'] / 5)
+                    liquidation_amount = math.trunc(trading_data['quantity'] / 5)
 
                     # 주문가가 5달러 이하일 경우 주문 오류 => 전량 주문으로 변경
-                    if liquidation_quantity * cur_price < 5:
-                        liquidation_quantity = trading_data['quantity']
+                    if liquidation_amount * cur_price < 5:
+                        liquidation_amount = trading_data['quantity']
 
-                    utils.exit_position(
+                    trading_data = utils.exec_exit_order(
                         exchange=binance,
                         symbol=symbol,
                         position=trading_data,
                         pnl=pnl,
-                        quantity=liquidation_quantity
+                        amount=liquidation_amount
                     )
 
 
@@ -90,56 +86,56 @@ def exec_trading(symbol):
             elif 3600 + 10 < time_diff.seconds < 3600 * 4:
                 # 수익률 도달시 모든 포지션 종료
                 if pnl > take_profit_rate:
-                    liquidation_quantity = trading_data['quantity']
-                    utils.exit_position(
+                    liquidation_amount = trading_data['quantity']
+                    trading_data = utils.exec_exit_order(
                         exchange=binance,
                         symbol=symbol,
                         position=trading_data,
                         pnl=pnl,
-                        quantity=liquidation_quantity
+                        amount=liquidation_amount
                     )
 
             # 포지션 잡은 후 4시간 이상이면 모든 포지션 종료
             elif time_diff.seconds >= 3600 * 4:
-                liquidation_quantity = trading_data['quantity']
-                utils.exit_position(
+                liquidation_amount = trading_data['quantity']
+                trading_data = utils.exec_exit_order(
                     exchange=binance,
                     symbol=symbol,
                     position=trading_data,
                     pnl=pnl,
-                    quantity=liquidation_quantity
+                    amount=liquidation_amount
                 )
 
             # 손절 시나리오
             # 손실률 loss_cut_rate 발생시 청산
             # btc sma 양전 / 음전 시 청산
             if pnl < loss_cut_rate or reversal:
-                liquidation_quantity = trading_data['quantity']
-                utils.exit_position(
+                liquidation_amount = trading_data['quantity']
+                trading_data = utils.exec_exit_order(
                     exchange=binance,
                     symbol=symbol,
                     position=trading_data,
                     pnl=pnl,
-                    quantity=liquidation_quantity
+                    amount=liquidation_amount
                 )
 
-        '''포지션 진입'''
+            # 포지션 진입
         if trading_data['op_mode'] == 1 and trading_data['side'] == 'None':
             # 잔고
             balance = binance.fetch_balance()
             usdt = balance['total']['USDT']
             # 구매 가능 자산
-            quantity = utils.cal_quantity(usdt, cur_price, leverage)
+            amount = utils.cal_amount(usdt, cur_price, leverage)
 
             utils.enter_position(exchange=binance,
                                  symbol=symbol,
                                  cur_price=cur_price,
                                  long_target=long_target,
                                  short_target=short_target,
-                                 quantity=quantity,
+                                 amount=amount,
                                  )
 
-        '''콘솔 프린트'''
+        # 콘솔 프린트
         if 0 <= now.second % 10 <= 1:
             print(now)
             # 포지션이 없는 경우
@@ -150,7 +146,7 @@ def exec_trading(symbol):
                     "롱 목표가 :", long_target,
                     "숏 목표가 :", short_target, '\n'
                                              "BTC 20일선 이격률 :", btc_sma20_sep_rate,
-                    "RSI14 :", utils.calc_rsi(config.TIME_FRAME, symbol),
+                    "RSI14 :", utils.rsi_binance(config.TIME_FRAME, symbol),
                     "op_mode :", trading_data['op_mode']
                 )
                 print("# " * 100, '\n')
@@ -158,7 +154,7 @@ def exec_trading(symbol):
             else:
                 print(
                     "symbol:", symbol,
-                    "진입시간 :", trading_data['order_time'],
+                    "진입시간 :", trading_data['time'],
                     "포지션 :", trading_data['side'],
                     "주문가 :", trading_data["order_price"],
                     "주문수량 :", trading_data['quantity'],

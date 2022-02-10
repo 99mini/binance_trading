@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="coins.db" uuid="11441034-fcb7-4a0e-8ef2-af6a70b9e72c">
+<<<<<<< HEAD
+    <data-source source="LOCAL" name="coins.db" uuid="c2f9d0cc-9c56-4dc0-93bd-81ea4693a680">
+=======
+    <data-source source="LOCAL" name="coin_buy_sell.db" uuid="4a4b9baa-7142-445e-8e3c-8ac9ad092cec">
+>>>>>>> b83a2760079b259466f99a6c9e2638575c750e96
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>

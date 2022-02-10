@@ -65,13 +65,13 @@ def insert_db_history(dict_data):
     try:
         cs = con.cursor()
         cs.execute(
-            "INSERT INTO trade_history VALUES(:id,:order_time,:symbol,:side,:price,:quantity)",
+            "INSERT INTO trade_history VALUES(:id,:order_time,:symbol,:side,:price,:amount)",
             {
                 'order_time': dict_data['order_time'],
                 'symbol': dict_data['symbol'],
                 'side': dict_data['side'],
                 'price': dict_data['price'],
-                'quantity': dict_data['quantity'],
+                'amount': dict_data['amount'],
                 'id': None
             }
         )
@@ -84,11 +84,11 @@ def insert_db_trading(dict_data):
     try:
         cs = con.cursor()
         cs.execute(
-            "INSERT INTO trading_table VALUES(:symbol,:side,:quantity,:order_price,:op_mode,:order_time,:split_rate)",
+            "INSERT INTO trading_table VALUES(:symbol,:side,:amount,:order_price,:op_mode,:order_time,:split_rate)",
             {
                 'symbol': dict_data['symbol'],
                 'side': dict_data['side'],
-                'quantity': dict_data['quantity'],
+                'amount': dict_data['amount'],
                 'order_price': dict_data['order_price'],
                 'op_mode': dict_data['op_mode'],
                 'order_time': dict_data['order_time'],
@@ -121,10 +121,10 @@ def update_db_trading(dict_data):
         cs = con.cursor()
 
         cs.execute(
-            "UPDATE trading_table SET side=:side,quantity=:quantity,op_mode=:op_mode,order_time=:order_time,order_price=:order_price,split_rate=:split_rate WHERE symbol=:symbol",
+            "UPDATE trading_table SET side=:side,amount=:amount,op_mode=:op_mode,order_time=:order_time,order_price=:order_price,split_rate=:split_rate WHERE symbol=:symbol",
             {
                 'side': dict_data['side'],
-                'quantity': dict_data['quantity'],
+                'amount': dict_data['amount'],
                 'op_mode': dict_data['op_mode'],
                 'order_time': dict_data['order_time'],
                 'order_price': dict_data['order_price'],
