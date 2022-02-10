@@ -203,7 +203,7 @@ def exit_position(exchange, symbol, position, pnl, amount):
         print_console_exit_position(cur_price, position['side'])
 
         if position['amount'] == 0:
-            position['side'] = None
+
 
         # 텔레그램 알림
         msg = '{0}\n수익률: {1}'.format(symbol, pnl)
@@ -223,18 +223,26 @@ def exit_position(exchange, symbol, position, pnl, amount):
         db_helper.insert_db_history(history_data)
 
         # db update trading_table
-        op_mode = 1
         if position['amount'] <= 0:
-            op_mode = 0
-        trading_data = {
-            'symbol': symbol,
-            'side': position['side'],
-            'amount': position['amount'],
-            'order_price': position['order_price'],
-            'op_mode': op_mode,
-            'order_time': position['order_time'],
-            'split_rate': position['split_rate'] * 1.1
-        }
+            trading_data = {
+                'symbol': symbol,
+                'side': 'None',
+                'amount': position['amount'],
+                'order_price': position['order_price'],
+                'op_mode': 0,
+                'order_time': position['order_time'],
+                'split_rate': 0.8
+            }
+        else:
+            trading_data = {
+                'symbol': symbol,
+                'side': position['side'],
+                'amount': position['amount'],
+                'order_price': position['order_price'],
+                'op_mode': 1,
+                'order_time': position['order_time'],
+                'split_rate': position['split_rate'] * 1.1
+            }
         db_helper.update_db_trading(trading_data)
 
     except Exception as e:
@@ -247,9 +255,6 @@ def update_targets(symbols):
         data = db_helper.select_db_trading(symbol=symbol)
         side = data['side']
         if side == 'None':
-            # 포지션이 없는 경우 목표가 갱신
-            print("{0}목표가 갱신".format(symbol))
-            print("=" * 100)
 
             long_target, short_target = calc_target(binance, symbol)
 
@@ -269,6 +274,9 @@ def update_targets(symbols):
                 }
             )
 
+            # 포지션이 없는 경우 목표가 갱신
+            print("{0}목표가 갱신".format(symbol))
+            print("=" * 100)
             time.sleep(1)
 
 
