@@ -59,9 +59,9 @@ def exec_trading(symbol, now):
             elif trading_data['side'] == 'short':
                 reversal = btc_sma20_sep_rate > 0
 
-            # 1시간봉 기준
-            # 포지션을 잡은 후 1시간 이내
-            if time_diff.seconds <= 3600:
+            # 4시간봉 기준
+            # 포지션을 잡은 후 4시간 이내
+            if time_diff.seconds <= 3600 * 4:
                 # 1시간 이내에 익절 구간있으면 익절
                 # 수익률이 목표수익률 * 분할매도비율 이상이면
                 # 수량의 25% 청산
@@ -73,20 +73,6 @@ def exec_trading(symbol, now):
                     if liquidation_amount * cur_price < 5:
                         liquidation_amount = trading_data['amount']
 
-                    utils.exit_position(
-                        exchange=binance,
-                        symbol=symbol,
-                        position=trading_data,
-                        pnl=pnl,
-                        amount=liquidation_amount
-                    )
-
-
-            # 포지션 잡은 후 1시간 ~ 4시간 사이
-            elif 3600 + 10 < time_diff.seconds < 3600 * 4:
-                # 수익률 도달시 모든 포지션 종료
-                if pnl > take_profit_rate:
-                    liquidation_amount = trading_data['amount']
                     utils.exit_position(
                         exchange=binance,
                         symbol=symbol,

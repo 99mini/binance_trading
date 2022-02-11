@@ -47,7 +47,7 @@ for symbol in symbols:
 
 while True:
     now = datetime.datetime.now()
-    if now.minute == 0 and (10 < now.second < 20):
+    if now.hour % 4 == 1 and now.minute == 0 and (10 < now.second < 20):
         utils.update_targets(symbols=symbols)
     for symbol in symbols:
         volatility_trading_bot.exec_trading(symbol=symbol, now=now)
