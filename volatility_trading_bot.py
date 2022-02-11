@@ -7,8 +7,8 @@ import utils
 from coins import binance
 
 # 익절률 | 손절률
-take_profit_rate = 1.4
-loss_cut_rate = - 1.3
+take_profit_rate = 2.5
+loss_cut_rate = - 2
 
 # 레버리지
 leverage = 10
